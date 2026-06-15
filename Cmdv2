@@ -1,4 +1,4 @@
---// CMD Library Improved (No UICorner, Fixed Args)
+--// CMD Library V3 (Auto Commands + Fixed Args)
 
 local CMD = {}
 CMD.Commands = {}
@@ -35,6 +35,112 @@ local List = Instance.new("ScrollingFrame")
 List.Parent = Main
 List.Position = UDim2.new(0,8,0,32)
 List.Size = UDim2.new(1,-16,1,-70)
+List.CanvasSize = UDim2.new()
+List.ScrollBarImageTransparency = 0.3
+List.BackgroundColor3 = Color3.fromRGB(10,10,10)
+List.BorderSizePixel = 0
+
+local Layout = Instance.new("UIListLayout")
+Layout.Parent = List
+Layout.Padding = UDim.new(0,4)
+
+local Input = Instance.new("TextBox")
+Input.Parent = Main
+Input.Position = UDim2.new(0,8,1,-32)
+Input.Size = UDim2.new(1,-16,0,24)
+Input.PlaceholderText = ";speed 50"
+Input.ClearTextOnFocus = false
+Input.Font = Enum.Font.Code
+Input.TextSize = 15
+Input.TextColor3 = Color3.new(1,1,1)
+Input.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Input.BorderSizePixel = 0
+
+-- ================= UI HELPERS =================
+local function Clear()
+	for _,v in ipairs(List:GetChildren()) do
+		if v:IsA("TextLabel") then
+			v:Destroy()
+		end
+	end
+end
+
+local function Line(text, color)
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(1,-8,0,18)
+	l.BackgroundTransparency = 1
+	l.TextXAlignment = Left
+	l.Text = text
+	l.Font = Enum.Font.Code
+	l.TextSize = 14
+	l.TextColor3 = color or Color3.fromRGB(220,220,220)
+	l.Parent = List
+
+	task.wait()
+	List.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y + 5)
+end
+
+-- ================= AUTO LIST =================
+local function Refresh()
+	Clear()
+	for _,cmd in pairs(CMD.Commands) do
+		local argText = cmd.HasArgs and (" ["..cmd.ArgName.."]") or ""
+		Line(";"..cmd.Name..argText.." - "..cmd.Desc)
+	end
+end
+
+-- ================= COMMAND SYSTEM =================
+function CMD:AddCommand(data)
+	assert(data.Name and data.Run, "Command needs Name and Run")
+	data.Name = data.Name:lower()
+	CMD.Commands[data.Name] = data
+	Refresh()
+end
+
+-- ================= EXECUTE =================
+Input.FocusLost:Connect(function(enter)
+	if not enter then return end
+
+	local raw = Input.Text
+	Input.Text = ""
+
+	if raw:sub(1,1) ~= ";" then return end
+
+	-- limpiar espacios
+	raw = raw:sub(2)
+	raw = string.gsub(raw, "^%s*(.-)%s*$", "%1")
+
+	local name, arg = raw:match("^(%S+)%s*(.*)$")
+	if not name then return end
+	name = name:lower()
+
+	local cmd = CMD.Commands[name]
+	if not cmd then
+		Line("Comando no encontrado", Color3.fromRGB(255,80,80))
+		return
+	end
+
+	if cmd.HasArgs then
+		if arg == "" then
+			Line("Falta argumento: ["..cmd.ArgName.."]", Color3.fromRGB(255,170,0))
+			return
+		end
+		cmd.Run(arg)
+	else
+		cmd.Run()
+	end
+end)
+
+-- ================= TOGGLE =================
+UIS.InputBegan:Connect(function(i,gp)
+	if gp then return end
+	if i.KeyCode == Enum.KeyCode.RightShift then
+		Main.Visible = not Main.Visible
+	end
+end)
+
+Refresh()
+return CMDList.Size = UDim2.new(1,-16,1,-70)
 List.CanvasSize = UDim2.new()
 List.ScrollBarImageTransparency = 0.3
 List.BackgroundColor3 = Color3.fromRGB(10,10,10)
