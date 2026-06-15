@@ -1,40 +1,60 @@
---// CMD Library V3 (Auto Commands + Fixed Args)
-
+-- CMD V2 CORE (SIN UICORNER)
 local CMD = {}
 CMD.Commands = {}
+CMD.Prefix = ";"
 
--- Services
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local LP = Players.LocalPlayer
+-- ========================
+-- REGISTRAR COMANDOS
+-- ========================
+function CMD:AddCommand(data)
+    self.Commands[data.Name:lower()] = data
+end
 
--- ================= GUI =================
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "CMD_UI"
-Gui.Parent = game.CoreGui
+-- ========================
+-- EJECUTAR TEXTO
+-- ========================
+function CMD:Execute(text)
+    if text:sub(1,1) ~= self.Prefix then return end
 
-local Main = Instance.new("Frame")
-Main.Parent = Gui
-Main.Size = UDim2.fromScale(0.5, 0.4)
-Main.Position = UDim2.fromScale(0.25, 0.3)
-Main.BackgroundColor3 = Color3.fromRGB(15,15,15)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
+    local args = {}
+    for word in text:gmatch("%S+") do
+        table.insert(args, word)
+    end
 
-local Title = Instance.new("TextLabel")
-Title.Parent = Main
-Title.Size = UDim2.new(1,0,0,28)
-Title.Text = "CMD Console"
-Title.Font = Enum.Font.Code
-Title.TextSize = 17
-Title.TextColor3 = Color3.new(1,1,1)
-Title.BackgroundTransparency = 1
+    local cmdName = args[1]:sub(2):lower()
+    table.remove(args, 1)
 
-local List = Instance.new("ScrollingFrame")
-List.Parent = Main
-List.Position = UDim2.new(0,8,0,32)
-List.Size = UDim2.new(1,-16,1,-70)
+    local cmd = self.Commands[cmdName]
+    if not cmd then return end
+
+    if cmd.HasArgs and #args == 0 then
+        warn("Faltan argumentos")
+        return
+    end
+
+    cmd.Run(unpack(args))
+end
+
+-- ========================
+-- LISTA DE COMANDOS
+-- ========================
+CMD:AddCommand({
+    Name = "cmds",
+    HasArgs = false,
+    Desc = "Lista de comandos",
+    Run = function()
+        print("===== COMANDOS =====")
+        for _,cmd in pairs(CMD.Commands) do
+            if cmd.HasArgs then
+                print(";"..cmd.Name.." ["..cmd.ArgName.."] - "..cmd.Desc)
+            else
+                print(";"..cmd.Name.." - "..cmd.Desc)
+            end
+        end
+    end
+})
+
+return CMDList.Size = UDim2.new(1,-16,1,-70)
 List.CanvasSize = UDim2.new()
 List.ScrollBarImageTransparency = 0.3
 List.BackgroundColor3 = Color3.fromRGB(10,10,10)
